@@ -1,5 +1,19 @@
 #!/usr/bin/env node
 
+// Copyright 2019 Google Inc.
+//
+//     Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+//     You may obtain a copy of the License at
+//
+// https://www.apache.org/licenses/LICENSE-2.0
+//
+//     Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+//     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//     See the License for the specific language governing permissions and
+// limitations under the License.
+
 const concat = require('mississippi').concat;
 const yaml = require('js-yaml');
 const lodash = require('lodash');
@@ -24,6 +38,15 @@ let fn = function(str) {
             lodash.get(r, "kind") == "Service")[0]
         if (!config) {
             console.error("no config-service to auto-wire.")
+            console.error("inputs:" + str)
+            process.exit(1)
+        }
+
+        let apigateway = resources.filter(r =>
+            lodash.get(r, 'metadata.annotations["springcloud.kitops.dev/wire"]') == "api-gateway-service" &&
+            lodash.get(r, "kind") == "Service")[0]
+        if (!config) {
+            console.error("no api-gateway-service to auto-wire.")
             console.error("inputs:" + str)
             process.exit(1)
         }
@@ -69,6 +92,7 @@ let fn = function(str) {
                     lodash.merge(generatedService, {
                         metadata: {
                             name: lodash.get(r, 'metadata.name'),
+                            namespace: lodash.get(r, 'metadata.namespace'),
                             annotations: {
                                 "springcloud.kitops.dev/generated-from": lodash.get(r, 'metadata.name'),
                             },
@@ -100,7 +124,7 @@ let fn = function(str) {
 
                 let imageName = lodash.get(r, 'spec.template.spec.containers[0].name')
                 if (lodash.has(plugin, 'transform.image.repo')) {
-                    imageName = lodash.get(plugin, 'transform.image.repo') + "/" + lodash.get(r, 'spec.template.spec.containers[0].name')
+                    imageName = lodash.get(plugin, 'transform.image.repo') + "/" + lodash.get(r, 'spec.template.spec.containers[0].image')
                 }
 
                 if (lodash.has(plugin, 'transform.image.tag')) {
@@ -117,6 +141,7 @@ let fn = function(str) {
                     "--eureka.instance.leaseRenewalIntervalInSeconds=" + leaseRenewalSeconds,
                     "--eureka.instance.hostname=" + r.metadata.name,
                     "--eureka.instance.registryFetchIntervalSeconds=" + registryFetchSeconds,
+                    "--server.port=8080",
                     "--spring.cloud.config.uri=http://" + config.metadata.name + ":8888",
                     "--spring.datasource.platform=$(SPRING_DATASOURCE_PLATFORM)",
                     "--spring.datasource.url=$(SPRING_DATASOURCE_URL)",
