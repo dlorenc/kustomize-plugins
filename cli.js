@@ -28,7 +28,16 @@ let fn = function(str) {
             lodash.get(r, 'metadata.annotations["springcloud.kitops.dev/wire"]') == "discovery-service" &&
             lodash.get(r, "kind") == "Service")[0]
         if (!discovery) {
-            console.error("no discovery-service to auto-wire.")
+            console.error("no discovery-service service to auto-wire.")
+            console.error("inputs:" + str)
+            process.exit(1)
+        }
+
+        let discoveryDeployment = resources.filter(r =>
+            lodash.get(r, 'metadata.annotations["springcloud.kitops.dev/wire"]') == "discovery-service" &&
+            lodash.get(r, "kind") == "StatefulSet")[0]
+        if (!discovery) {
+            console.error("no discovery-service statefulset to auto-wire.")
             console.error("inputs:" + str)
             process.exit(1)
         }
@@ -75,10 +84,18 @@ let fn = function(str) {
                 lodash.get(r, 'kind') == "Deployment") {
 
                 let labels = lodash.get(r, 'spec.selector.matchLabels')
+                if (!labels) {
+                    lodash.set(r, 'spec.selector.matchLabels', {})
+                }
+                lodash.merge(r.spec.selector.matchLabels ,{
+                        "app.kubernetes.io/component": r.metadata.name,
+                        "app.kubernetes.io/instance": "spring-cloud-" + r.metadata.name,
+                    })
+
                 lodash.merge(lodash.get(r, 'metadata.labels'), labels)
                 lodash.merge(lodash.get(r, 'spec.template.metadata.labels'), labels)
 
-                let container = lodash.merge(lodash.get(r, 'spec.template.spec.containers[0]'))
+                let container = lodash.get(r, 'spec.template.spec.containers[0]')
                 let service = servicesMap[lodash.get(r, 'metadata.name')]
 
                 if (service) {
@@ -133,6 +150,11 @@ let fn = function(str) {
 
                 lodash.set(r, 'spec.template.spec.containers[0].image', imageName)
                 lodash.set(r, 'metadata.annotations["app.kubernetes.io/build-version"]', lodash.get(plugin, 'transform.image.tag'))
+
+                if (lodash.has(discoveryDeployment, 'spec.template.spec.containers[0].envFrom') && !lodash.has(r, 'spec.template.spec.containers[0].envFrom')) {
+                    let env = lodash.get(discoveryDeployment, 'spec.template.spec.containers[0].envFrom')
+                    lodash.set(container, "envFrom", env)
+                }
 
                 container.command = [
                     "./dockerize" , "-wait=tcp://" + discovery.metadata.name + ":8761", "-timeout=60s", "--",
@@ -193,11 +215,6 @@ spec:
     spec:
       containers:
       - name: spring-cloud-service
-        envFrom:
-          - configMapRef:
-              name: spring-cloud-config
-          - secretRef:
-              name: spring-cloud-secret
         env:
           - name: JAVA_OPTS
             value: -XX:+UnlockExperimentalVMOptions -XX:+UseCGroupMemoryLimitForHeap -Djava.security.egd=file:/dev/./urandom
