@@ -17,6 +17,9 @@ RUN chmod +x kubectl
 RUN go get sigs.k8s.io/kustomize
 
 FROM node:8.16.0-stretch
+
+# install gcloud
+# TODO: reduce the size of the container by cleaning up the apt package stuff
 RUN apt-get update
 RUN apt-get install lsb-core -y
 RUN apt-get install build-essential -y
@@ -25,10 +28,15 @@ RUN export CLOUD_SDK_REPO="cloud-sdk-$(lsb_release -c -s)" && \
     curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add - && \
     apt-get update -y && apt-get install google-cloud-sdk -y
 
+# add binaries
 COPY --from=0 /go/bin/kustomize /usr/local/bin/kustomize
 COPY --from=0 /go/kubectl /usr/local/bin/kubectl
+
+# set plugin env
 ENV XDG_CONFIG_HOME /.config/
+
+# add SpringCloudPlatform plugin
 RUN mkdir -p  /.config/kustomize/plugin/springcloud.kitops.dev/v1beta1
-COPY . /usr/local/springcloud.kitops.dev
+COPY springcloudplatform /usr/local/springcloud.kitops.dev
 RUN ln -s /usr/local/springcloud.kitops.dev/cli.js /.config/kustomize/plugin/springcloud.kitops.dev/v1beta1/SpringCloudPlatform
 
