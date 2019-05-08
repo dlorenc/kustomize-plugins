@@ -12,9 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 FROM golang:1.12.4-stretch
-RUN go get sigs.k8s.io/kustomize
 RUN curl -LO https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl
 RUN chmod +x kubectl
+RUN go get sigs.k8s.io/kustomize
 
 FROM node:8.16.0-stretch
 RUN apt-get update
@@ -27,6 +27,8 @@ RUN export CLOUD_SDK_REPO="cloud-sdk-$(lsb_release -c -s)" && \
 
 COPY --from=0 /go/bin/kustomize /usr/local/bin/kustomize
 COPY --from=0 /go/kubectl /usr/local/bin/kubectl
-COPY . /usr/local/springcloudtransformer
-RUN ln -s /usr/local/springcloudtransformer/cli.js /usr/local/bin/cli.js
+ENV XDG_CONFIG_HOME /.config/
+RUN mkdir -p  /.config/kustomize/plugin/springcloud.kitops.dev/v1beta1
+COPY . /usr/local/springcloud.kitops.dev
+RUN ln -s /usr/local/springcloud.kitops.dev/cli.js /.config/kustomize/plugin/springcloud.kitops.dev/v1beta1/SpringCloudPlatform
 
