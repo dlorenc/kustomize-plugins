@@ -1,0 +1,30 @@
+{
+  "name": "kustomize-plugins",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kitops/kustomize-plugins.git"
+  },
+  "keywords": [],
+  "author": "@pwittrock",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/kitops/kustomize-plugins/issues"
+  },
+  "homepage": "https://github.com/kitops/kustomize-plugins#readme",
+  "description": "spring cloud plugins for kustomize",
+  "dependencies": {
+    "@google-cloud/kms": "^0.4.0",
+    "fs": "0.0.1-security",
+    "js-yaml": "^3.13.1",
+    "loadash": "^1.0.0",
+    "lodash": "^4.17.11",
+    "mississippi": "^4.0.0",
+    "through2": "^3.0.1",
+    "yargs": "^13.2.2"
+  }
+}

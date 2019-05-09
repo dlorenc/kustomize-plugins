@@ -40,3 +40,8 @@ RUN mkdir -p  /.config/kustomize/plugin/springcloud.kitops.dev/v1beta1
 COPY springcloudplatform /usr/local/springcloud.kitops.dev
 RUN ln -s /usr/local/springcloud.kitops.dev/cli.js /.config/kustomize/plugin/springcloud.kitops.dev/v1beta1/SpringCloudPlatform
 
+# add AnthosPlatformPlugin
+RUN mkdir -p  /.config/kustomize/plugin/anthos.kitops.dev/v1beta1
+COPY anthos /usr/local/anthos.kitops.dev
+RUN ln -s /usr/local/anthos.kitops.dev/cli.js /.config/kustomize/plugin/anthos.kitops.dev/v1beta1/AnthosPlatform
+
