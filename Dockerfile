@@ -15,6 +15,10 @@ FROM golang:1.12.4-stretch
 RUN curl -LO https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl
 RUN chmod +x kubectl
 RUN go get sigs.k8s.io/kustomize
+COPY . /go/src/github.com/kitops/kustomize-plugins/
+RUN go build -o /helminflator github.com/kitops/kustomize-plugins/helminflator
+RUN curl -LO https://storage.googleapis.com/kubernetes-helm/helm-v2.13.1-linux-amd64.tar.gz && \
+    tar -zxvf helm*.tar.gz
 
 FROM node:8.16.0-stretch
 
@@ -31,6 +35,8 @@ RUN export CLOUD_SDK_REPO="cloud-sdk-$(lsb_release -c -s)" && \
 # add binaries
 COPY --from=0 /go/bin/kustomize /usr/local/bin/kustomize
 COPY --from=0 /go/kubectl /usr/local/bin/kubectl
+COPY --from=0 /go/linux-amd64/helm /usr/local/bin/helm
+RUN helm init --client-only
 
 # set plugin env
 ENV XDG_CONFIG_HOME /.config/
@@ -45,3 +51,7 @@ RUN mkdir -p  /.config/kustomize/plugin/anthos.kitops.dev/v1beta1
 COPY anthos /usr/local/anthos.kitops.dev
 RUN ln -s /usr/local/anthos.kitops.dev/cli.js /.config/kustomize/plugin/anthos.kitops.dev/v1beta1/AnthosPlatform
 
+# add helmInflatorPlugin
+RUN mkdir -p  /.config/kustomize/plugin/helminflator.kitops.dev/v1beta1
+COPY --from=0 /helminflator /usr/local/helminflator.kitops.dev/
+RUN ln -s /usr/local/helminflator.kitops.dev/helminflator /.config/kustomize/plugin/helminflator.kitops.dev/v1beta1/HelmInflator
